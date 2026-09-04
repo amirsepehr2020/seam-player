@@ -51,10 +51,14 @@ jobs:
           h = h.replace('import androidx.compose.foundation.layout.Row\n', 'import androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.RowScope\n')
           h = h.replace('private fun QuickCard(', 'private fun RowScope.QuickCard(')
           h = h.replace('fun items=tracks.map', 'val items=tracks.map')
-          # The generated Home file had one superfluous closing brace at the end of SeamHome.
-          # Remove only that exact boundary; do not globally rebalance braces.
           h = h.replace('}}}}\n}\n\n@Composable private fun HomeScreen', '}}}\n}\n\n@Composable private fun HomeScreen', 1)
           home.write_text(h)
+
+          v2 = Path('app/src/main/java/ir/seam/player/SeamHomeV2Activity.kt')
+          v = v2.read_text()
+          v = v.replace('? :', '?:')
+          v = v.replace('android.net.Uri.parse(path).toString()', 'android.net.Uri.fromFile(java.io.File(path)).toString()')
+          v2.write_text(v)
           PY
       - name: Build debug APK
         run: |
@@ -71,6 +75,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: seam-player-2.0.0-apk
+          name: seam-player-2.2.0-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
