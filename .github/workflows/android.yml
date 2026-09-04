@@ -52,6 +52,8 @@ jobs:
           h = h.replace('private fun QuickCard(', 'private fun RowScope.QuickCard(')
           h = h.replace('fun items=tracks.map', 'val items=tracks.map')
           h = h.replace('}}}}\n}\n\n@Composable private fun HomeScreen', '}}}\n}\n\n@Composable private fun HomeScreen', 1)
+          h = h.replace('items(recent.take(6), key = { it.id })', 'items(recent.take(6), key = { "recent_${it.id}" })')
+          h = h.replace('items(tracks.take(12), key = { it.id })', 'items(tracks, key = { "all_${it.id}" })')
           home.write_text(h)
           PY
       - name: Build debug APK
