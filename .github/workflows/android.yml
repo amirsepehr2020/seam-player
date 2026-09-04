@@ -23,3 +23,9 @@ jobs:
           gradle-version: '8.13'
       - name: Assemble debug APK
         run: gradle assembleDebug --no-daemon
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: seam-player-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
