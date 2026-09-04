@@ -42,6 +42,11 @@ class PlaybackService : MediaSessionService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // Keep playback alive when the user swipes SEAM Player away from recents.
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         mediaSession?.let { session -> session.player.release(); session.release() }
         mediaSession = null
