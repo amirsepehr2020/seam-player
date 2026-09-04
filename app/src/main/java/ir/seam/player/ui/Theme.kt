@@ -17,13 +17,15 @@ private val SeamDark = darkColorScheme(
     onBackground = Color(0xFFF9F3FC), onSurface = Color(0xFFF9F3FC), onSurfaceVariant = Color(0xFFC8BECE)
 )
 
-private val SeamFont = FontFamily(Font(R.font.vazirmatn, FontWeight.Normal), FontFamily.SansSerif)
-
+private val SeamFont = FontFamily(Font(R.font.vazirmatn, FontWeight.Normal))
 private val SeamTypography = Typography().run {
     copy(
-        displayLarge = displayLarge.copy(fontFamily = SeamFont, fontWeight = FontWeight.Bold), headlineLarge = headlineLarge.copy(fontFamily = SeamFont, fontWeight = FontWeight.Bold),
-        headlineMedium = headlineMedium.copy(fontFamily = SeamFont, fontWeight = FontWeight.Bold), headlineSmall = headlineSmall.copy(fontFamily = SeamFont, fontWeight = FontWeight.Bold),
-        titleLarge = titleLarge.copy(fontFamily = SeamFont, fontWeight = FontWeight.SemiBold), titleMedium = titleMedium.copy(fontFamily = SeamFont, fontWeight = FontWeight.Medium),
+        displayLarge = displayLarge.copy(fontFamily = SeamFont, fontWeight = FontWeight.Bold),
+        headlineLarge = headlineLarge.copy(fontFamily = SeamFont, fontWeight = FontWeight.Bold),
+        headlineMedium = headlineMedium.copy(fontFamily = SeamFont, fontWeight = FontWeight.Bold),
+        headlineSmall = headlineSmall.copy(fontFamily = SeamFont, fontWeight = FontWeight.Bold),
+        titleLarge = titleLarge.copy(fontFamily = SeamFont, fontWeight = FontWeight.SemiBold),
+        titleMedium = titleMedium.copy(fontFamily = SeamFont, fontWeight = FontWeight.Medium),
         bodyLarge = bodyLarge.copy(fontFamily = SeamFont), bodyMedium = bodyMedium.copy(fontFamily = SeamFont), bodySmall = bodySmall.copy(fontFamily = SeamFont),
         labelLarge = labelLarge.copy(fontFamily = SeamFont, fontWeight = FontWeight.SemiBold), labelMedium = labelMedium.copy(fontFamily = SeamFont, fontWeight = FontWeight.Medium), labelSmall = labelSmall.copy(fontFamily = SeamFont)
     )
