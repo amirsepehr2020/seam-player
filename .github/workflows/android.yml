@@ -29,8 +29,6 @@ jobs:
           p = Path('app/src/main/java/ir/seam/player/MainActivity.kt')
           s = p.read_text()
           s = re.sub(r'\}\}\}\s*\n\s*if\(queue\)', '}}\n if(queue)', s, count=1)
-          # Helpers named Action/StatCard are not RowScope receivers, so keep their
-          # surfaces full-width instead of calling Modifier.weight from those helpers.
           s = s.replace('Surface(Modifier.weight(1f).clickable(onClick = on)', 'Surface(Modifier.clickable(onClick = on)')
           s = s.replace('Surface(Modifier.weight(1f), shape = RoundedCornerShape(20.dp)', 'Surface(Modifier, shape = RoundedCornerShape(20.dp)')
           if not s.startswith('@file:OptIn'):
@@ -38,8 +36,18 @@ jobs:
           p.write_text(s)
           PY
       - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seam-player-build-log
+          path: build.log
+          if-no-files-found: ignore
       - name: Upload debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: seam-player-debug-apk
