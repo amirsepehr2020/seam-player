@@ -29,6 +29,10 @@ jobs:
           p = Path('app/src/main/java/ir/seam/player/MainActivity.kt')
           s = p.read_text()
           s = re.sub(r'\}\}\}\s*\n\s*if\(queue\)', '}}\n if(queue)', s, count=1)
+          # Helpers named Action/StatCard are not RowScope receivers, so keep their
+          # surfaces full-width instead of calling Modifier.weight from those helpers.
+          s = s.replace('Surface(Modifier.weight(1f).clickable(onClick = on)', 'Surface(Modifier.clickable(onClick = on)')
+          s = s.replace('Surface(Modifier.weight(1f), shape = RoundedCornerShape(20.dp)', 'Surface(Modifier, shape = RoundedCornerShape(20.dp)')
           if not s.startswith('@file:OptIn'):
               s = '@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)\n' + s
           p.write_text(s)
