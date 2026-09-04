@@ -8,8 +8,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,38 +41,73 @@ import ir.seam.player.ui.SeamTheme
 import kotlinx.coroutines.delay
 
 class SEAMHomeActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2001); setContent { SeamTheme { SeamHome(this) } } }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2001)
+        setContent { SeamTheme { SeamHome(this) } }
+    }
 }
 
 data class HomeTrack(val id: Long, val title: String, val artist: String, val album: String, val uri: String)
 enum class HomeTab { HOME, LIBRARY, SEARCH, SETTINGS }
 
-@Composable private fun SeamHome(context: Context) {
+@Composable
+private fun SeamHome(context: Context) {
     val purple = Color(0xFFB66CFF); val green = Color(0xFF63F29A); val bg = Color(0xFF08070D); val card = Color(0xFF121019)
-    var tracks by remember { mutableStateOf(emptyList<HomeTrack>()) }; var controller by remember { mutableStateOf<MediaController?>(null) }
-    var currentUri by remember { mutableStateOf<String?>(null) }; var playing by remember { mutableStateOf(false) }; var tab by remember { mutableStateOf(HomeTab.HOME) }
-    var query by remember { mutableStateOf("") }; var position by remember { mutableLongStateOf(0L) }; var duration by remember { mutableLongStateOf(0L) }
+    var tracks by remember { mutableStateOf(emptyList<HomeTrack>()) }
+    var controller by remember { mutableStateOf<MediaController?>(null) }
+    var currentUri by remember { mutableStateOf<String?>(null) }; var playing by remember { mutableStateOf(false) }
+    var shuffle by remember { mutableStateOf(false) }; var repeat by remember { mutableIntStateOf(Player.REPEAT_MODE_OFF) }
+    var tab by remember { mutableStateOf(HomeTab.HOME) }; var query by remember { mutableStateOf("") }
+    var position by remember { mutableLongStateOf(0L) }; var duration by remember { mutableLongStateOf(0L) }
     val permission = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) tracks = loadHomeTracks(context) }
+
     LaunchedEffect(Unit) {
         if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) tracks = loadHomeTracks(context) else permissionLauncher.launch(permission)
-        runCatching { val token = SessionToken(context, ComponentName(context, "ir.seam.player.playback.PlaybackService")); val future = MediaController.Builder(context, token).buildAsync(); future.addListener({ controller = runCatching { future.get() }.getOrNull() }, ContextCompat.getMainExecutor(context)) }
+        runCatching {
+            val token = SessionToken(context, ComponentName(context, "ir.seam.player.playback.PlaybackService"))
+            val future = MediaController.Builder(context, token).buildAsync()
+            future.addListener({ controller = runCatching { future.get() }.getOrNull() }, ContextCompat.getMainExecutor(context))
+        }
     }
     DisposableEffect(controller) {
         val c = controller ?: return@DisposableEffect onDispose { }
-        val listener = object : Player.Listener { override fun onIsPlayingChanged(v: Boolean) { playing = v }; override fun onMediaItemTransition(item: MediaItem?, reason: Int) { currentUri = item?.localConfiguration?.uri?.toString() } }
-        c.addListener(listener); currentUri = c.currentMediaItem?.localConfiguration?.uri?.toString(); playing = c.isPlaying
+        val listener = object : Player.Listener {
+            override fun onIsPlayingChanged(v: Boolean) { playing = v }
+            override fun onMediaItemTransition(item: MediaItem?, reason: Int) { currentUri = item?.localConfiguration?.uri?.toString() }
+            override fun onShuffleModeEnabledChanged(enabled: Boolean) { shuffle = enabled }
+            override fun onRepeatModeChanged(mode: Int) { repeat = mode }
+            override fun onPlaybackStateChanged(state: Int) { duration = c.duration.takeIf { it > 0 } ?: 0 }
+        }
+        c.addListener(listener); currentUri = c.currentMediaItem?.localConfiguration?.uri?.toString(); playing = c.isPlaying; shuffle = c.shuffleModeEnabled; repeat = c.repeatMode; duration = c.duration.takeIf { it > 0 } ?: 0
         onDispose { c.removeListener(listener) }
     }
-    DisposableEffect(Unit) { onDispose { controller?.release() } }
-    LaunchedEffect(controller, playing) { while (playing) { val c = controller ?: break; position = c.currentPosition.coerceAtLeast(0); duration = c.duration.takeIf { it > 0 } ?: 0; delay(300) } }
-    fun play(track: HomeTrack) {
-        val c = controller ?: return; val items = tracks.map { t -> MediaItem.Builder().setUri(t.uri).setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artist).setAlbumTitle(t.album).build()).build() }; val index = tracks.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
-        runCatching { c.setMediaItems(items, index, 0L); c.prepare(); c.play(); currentUri = track.uri; playing = true }
+    DisposableEffect(controller) { onDispose { /* Controller belongs to the Activity UI lifecycle; playback itself belongs to MediaSessionService. */ } }
+    LaunchedEffect(controller, playing) {
+        while (true) { val c = controller ?: break; position = c.currentPosition.coerceAtLeast(0); duration = c.duration.takeIf { it > 0 } ?: 0; if (!playing) break; delay(300) }
     }
-    val current = tracks.firstOrNull { it.uri == currentUri }; val visible = tracks.filter { query.isBlank() || it.title.contains(query, true) || it.artist.contains(query, true) || it.album.contains(query, true) }
-    Scaffold(containerColor = bg, bottomBar = { Column { current?.let { MiniNowPlaying(it, playing, position, duration, purple, green, { if (playing) controller?.pause() else controller?.play() }, { controller?.seekToNext() }, { context.startActivity(android.content.Intent(context, NowPlayingActivity::class.java)) }) }; BottomNav(tab, purple, green) { tab = it } } }) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding).safeDrawingPadding()) { when (tab) { HomeTab.HOME -> HomeScreen(tracks, current, playing, purple, green, card, ::play) { tab = HomeTab.SEARCH }; HomeTab.LIBRARY -> LibraryScreen(visible, current, playing, purple, green, ::play); HomeTab.SEARCH -> SearchScreen(query, visible, current, playing, purple, green, { query = it }, ::play); HomeTab.SETTINGS -> SettingsScreen(purple, green, tracks.size) } }
+    fun makeItems() = tracks.map { t -> MediaItem.Builder().setUri(t.uri).setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artist).setAlbumTitle(t.album).build()).build() }
+    fun play(track: HomeTrack) {
+        val c = controller ?: return; val index = tracks.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
+        runCatching { c.setMediaItems(makeItems(), index, 0L); c.prepare(); c.play(); currentUri = track.uri }
+    }
+    val current = tracks.firstOrNull { it.uri == currentUri }
+    val visible = tracks.filter { query.isBlank() || it.title.contains(query, true) || it.artist.contains(query, true) || it.album.contains(query, true) }
+    Scaffold(containerColor = bg, bottomBar = {
+        Column {
+            current?.let { MiniNowPlaying(it, playing, position, duration, purple, green, { if (playing) controller?.pause() else controller?.play() }, { controller?.seekToNextMediaItem() }, { context.startActivity(android.content.Intent(context, NowPlayingActivity::class.java)) }) }
+            BottomNav(tab, purple, green) { tab = it }
+        }
+    }) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            when (tab) {
+                HomeTab.HOME -> HomeScreen(tracks, current, playing, purple, green, card, ::play) { tab = HomeTab.SEARCH }
+                HomeTab.LIBRARY -> LibraryScreen(visible, current, playing, purple, green, ::play)
+                HomeTab.SEARCH -> SearchScreen(query, visible, current, playing, purple, green, { query = it }, ::play)
+                HomeTab.SETTINGS -> SettingsScreen(purple, green, tracks.size)
+            }
+        }
     }
 }
 
@@ -81,7 +116,7 @@ enum class HomeTab { HOME, LIBRARY, SEARCH, SETTINGS }
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("SEAM", color = purple, fontWeight = FontWeight.Black); Text("خانه", color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineLarge); Text("موسیقی تو، ساده و سریع", color = Color(0xFF9E96A8)) }; IconButton(onClick = openSearch) { Icon(Icons.Rounded.Search, "جستجو", tint = Color.White) } } }
         item { HeroCard(current, playing, tracks.size, purple, green, play) }
         item { Text("دسترسی سریع", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) }
-        item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) { QuickCard(Icons.Rounded.Shuffle, "تصادفی", purple, card) { if (tracks.isNotEmpty()) play(tracks.random()) }; QuickCard(Icons.Rounded.LibraryMusic, "کتابخانه", green, card) {}; QuickCard(Icons.Rounded.Search, "جستجو", purple, card, openSearch) } }
+        item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) { QuickCard(Icons.Rounded.Shuffle, "تصادفی", purple, card) { if (tracks.isNotEmpty()) play(tracks.random()) }; QuickCard(Icons.Rounded.LibraryMusic, "کتابخانه", green, card) { /* handled by bottom navigation in parent */ }; QuickCard(Icons.Rounded.Search, "جستجو", purple, card, openSearch) } }
         item { Text("آهنگ‌های اخیر", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) }
         items(tracks.take(12), key = { it.id }) { TrackRow(it, it.id == current?.id, playing, purple, green, play) }
     }
@@ -97,5 +132,13 @@ enum class HomeTab { HOME, LIBRARY, SEARCH, SETTINGS }
 @Composable private fun SettingsScreen(purple: Color, green: Color, count: Int) { Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) { Text("تنظیمات", color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.headlineLarge); SettingCard("تجربه پخش", "Media3 / ExoPlayer • پخش در پس‌زمینه", purple); SettingCard("کتابخانه", "$count آهنگ شناسایی شده", green); SettingCard("طراحی", "Dark + Glow + فونت فارسی", purple); SettingCard("کنترل‌ها", "اعلان و صفحه قفل آماده استفاده است", green) } }
 @Composable private fun SettingCard(title: String, subtitle: String, glow: Color) { Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF121019)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(10.dp).shadow(8.dp, CircleShape, ambientColor = glow, spotColor = glow).background(glow, CircleShape)); Spacer(Modifier.size(12.dp)); Column { Text(title, color = Color.White, fontWeight = FontWeight.Bold); Text(subtitle, color = Color(0xFF98909E)) } } }
 @Composable private fun BottomNav(tab: HomeTab, purple: Color, green: Color, onTab: (HomeTab) -> Unit) { Surface(color = Color(0xFF0B0910)) { Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 8.dp, vertical = 6.dp), horizontalArrangement = Arrangement.SpaceAround) { BottomItem(Icons.Rounded.Home, "خانه", tab == HomeTab.HOME, purple) { onTab(HomeTab.HOME) }; BottomItem(Icons.Rounded.LibraryMusic, "کتابخانه", tab == HomeTab.LIBRARY, green) { onTab(HomeTab.LIBRARY) }; BottomItem(Icons.Rounded.Search, "جستجو", tab == HomeTab.SEARCH, purple) { onTab(HomeTab.SEARCH) }; BottomItem(Icons.Rounded.Settings, "تنظیمات", tab == HomeTab.SETTINGS, green) { onTab(HomeTab.SETTINGS) } } } }
-@Composable private fun BottomItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, selected: Boolean, glow: Color, onClick: () -> Unit) { Column(Modifier.clip(RoundedCornerShape(18.dp)).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(icon, null, tint = if (selected) glow else Color(0xFF6D6674)); Text(title, color = if (selected) Color.White else Color(0xFF6D6674), style = MaterialTheme.typography.labelSmall) } }
-private fun loadHomeTracks(context: Context): List<HomeTrack> { val result = mutableListOf<HomeTrack>(); val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM); runCatching { context.contentResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection, "${MediaStore.Audio.Media.IS_MUSIC} != 0", null, "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC")?.use { c -> val id = c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID); val title = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE); val artist = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST); val album = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM); while (c.moveToNext()) { val mediaId = c.getLong(id); result += HomeTrack(mediaId, c.getString(title) ?: "", c.getString(artist) ?: "", c.getString(album) ?: "", "content://media/external/audio/media/$mediaId") } } }; return result }
+@Composable private fun BottomItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, selected: Boolean, glow: Color, onClick: () -> Unit) { Column(Modifier.clickable(onClick = onClick).padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(icon, null, tint = if (selected) glow else Color(0xFF8A828F)); Text(title, color = if (selected) glow else Color(0xFF8A828F), fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) } }
+
+private fun loadHomeTracks(context: Context): List<HomeTrack> {
+    val list = mutableListOf<HomeTrack>(); val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+    val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM)
+    context.contentResolver.query(collection, projection, "${MediaStore.Audio.Media.IS_MUSIC} != 0", null, "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC")?.use { c ->
+        val id = c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID); val title = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE); val artist = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST); val album = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+        while (c.moveToNext()) { val trackId = c.getLong(id); list += HomeTrack(trackId, c.getString(title) ?: "", c.getString(artist) ?: "", c.getString(album) ?: "", "content://media/external/audio/media/$trackId") }
+    }; return list
+}
