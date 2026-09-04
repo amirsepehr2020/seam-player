@@ -53,12 +53,6 @@ jobs:
           h = h.replace('fun items=tracks.map', 'val items=tracks.map')
           h = h.replace('}}}}\n}\n\n@Composable private fun HomeScreen', '}}}\n}\n\n@Composable private fun HomeScreen', 1)
           home.write_text(h)
-
-          v2 = Path('app/src/main/java/ir/seam/player/SeamHomeV2Activity.kt')
-          v = v2.read_text()
-          v = v.replace('? :', '?:')
-          v = v.replace('android.net.Uri.parse(path).toString()', 'android.net.Uri.fromFile(java.io.File(path)).toString()')
-          v2.write_text(v)
           PY
       - name: Build debug APK
         run: |
