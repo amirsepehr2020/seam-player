@@ -50,6 +50,7 @@ jobs:
           h = home.read_text()
           h = h.replace('import androidx.compose.foundation.layout.Row\n', 'import androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.RowScope\n')
           h = h.replace('private fun QuickCard(', 'private fun RowScope.QuickCard(')
+          h = h.replace('fun items=tracks.map', 'val items=tracks.map')
           home.write_text(h)
           PY
       - name: Build debug APK
