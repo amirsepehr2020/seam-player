@@ -25,9 +25,10 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p = Path('app/src/main/java/ir/seam/player/MainActivity.kt')
           s = p.read_text()
-          s = s.replace('})}}}\n if(queue)', '})}}\n if(queue)')
+          s = re.sub(r'\}\}\}\s*\n\s*if\(queue\)', '}}\n if(queue)', s, count=1)
           p.write_text(s)
           PY
       - name: Build debug APK
