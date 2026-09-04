@@ -12,14 +12,15 @@
         android:roundIcon="@drawable/seam_logo"
         android:theme="@style/Theme.SEAMPlayer"
         android:supportsRtl="true">
-        <activity android:name=".SEAMHomeActivity" android:exported="true" android:screenOrientation="portrait">
+        <activity android:name=".SeamHomeV2Activity" android:exported="true" android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".NowPlayingActivity" android:exported="false" android:screenOrientation="portrait" />
-        <activity android:name=".MainActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".SEAMHomeActivity" android:exported="false" />
+        <activity android:name=".NowPlayingActivity" android:exported="false" android:screenOrientation="unspecified" />
+        <activity android:name=".MainActivity" android:exported="false" />
         <service android:name=".playback.PlaybackService" android:exported="true" android:foregroundServiceType="mediaPlayback">
             <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
         </service>
