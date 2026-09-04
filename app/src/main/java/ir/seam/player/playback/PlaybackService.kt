@@ -53,7 +53,7 @@ class PlaybackService : MediaSessionService() {
             this, 1001, openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val previous = CommandButton.Builder(CommandButton.ICON_SKIP_TO_PREVIOUS)
+        val previous = CommandButton.Builder(CommandButton.ICON_PREVIOUS)
             .setPlayerCommand(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
             .setDisplayName("آهنگ قبلی").build()
         val rewind = CommandButton.Builder(CommandButton.ICON_SKIP_BACK_10)
@@ -62,7 +62,7 @@ class PlaybackService : MediaSessionService() {
         val forward = CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_10)
             .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
             .setDisplayName("۱۰ ثانیه جلو").build()
-        val next = CommandButton.Builder(CommandButton.ICON_SKIP_TO_NEXT)
+        val next = CommandButton.Builder(CommandButton.ICON_NEXT)
             .setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
             .setDisplayName("آهنگ بعدی").build()
         mediaSession = MediaSession.Builder(this, player)
