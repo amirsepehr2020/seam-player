@@ -21,6 +21,16 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
+      - name: Prepare bundled Persian font
+        run: |
+          set -e
+          mkdir -p app/src/main/res/font
+          base="https://raw.githubusercontent.com/rastikerdar/vazirmatn/master/fonts/ttf"
+          curl -fL "$base/Vazirmatn-Regular.ttf" -o app/src/main/res/font/vazirmatn_regular.ttf
+          curl -fL "$base/Vazirmatn-Medium.ttf" -o app/src/main/res/font/vazirmatn_medium.ttf
+          curl -fL "$base/Vazirmatn-SemiBold.ttf" -o app/src/main/res/font/vazirmatn_semibold.ttf
+          curl -fL "$base/Vazirmatn-Bold.ttf" -o app/src/main/res/font/vazirmatn_bold.ttf
+          curl -fL "$base/Vazirmatn-ExtraBold.ttf" -o app/src/main/res/font/vazirmatn_extrabold.ttf
       - name: Normalize Kotlin source
         run: |
           python3 - <<'PY'
@@ -51,6 +61,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: seam-player-debug-apk
+          name: seam-player-2.0.0-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
