@@ -29,6 +29,8 @@ jobs:
           p = Path('app/src/main/java/ir/seam/player/MainActivity.kt')
           s = p.read_text()
           s = re.sub(r'\}\}\}\s*\n\s*if\(queue\)', '}}\n if(queue)', s, count=1)
+          if not s.startswith('@file:OptIn'):
+              s = '@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)\n' + s
           p.write_text(s)
           PY
       - name: Build debug APK
