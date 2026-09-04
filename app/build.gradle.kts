@@ -12,8 +12,8 @@ android {
         applicationId = "ir.seam.player"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
     }
 
     buildFeatures { compose = true }
@@ -21,7 +21,7 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.07.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
@@ -39,8 +39,4 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.11.0")
     implementation("androidx.media3:media3-session:1.11.0")
     implementation("androidx.media3:media3-ui:1.11.0")
-
-    implementation("androidx.room:room-runtime:2.7.2")
-    implementation("androidx.room:room-ktx:2.7.2")
-    implementation("androidx.datastore:datastore-preferences:1.1.7")
 }
