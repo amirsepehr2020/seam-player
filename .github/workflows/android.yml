@@ -45,6 +45,12 @@ jobs:
           if not s.startswith('@file:OptIn'):
               s = '@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)\n' + s
           p.write_text(s)
+
+          home = Path('app/src/main/java/ir/seam/player/SEAMHomeActivity.kt')
+          h = home.read_text()
+          h = h.replace('import androidx.compose.foundation.layout.Row\n', 'import androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.RowScope\n')
+          h = h.replace('private fun QuickCard(', 'private fun RowScope.QuickCard(')
+          home.write_text(h)
           PY
       - name: Build debug APK
         run: |
