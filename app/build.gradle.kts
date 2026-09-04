@@ -12,8 +12,22 @@ android {
         applicationId = "ir.seam.player"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "2.1.0"
+        versionCode = 8
+        versionName = "2.2.1"
+    }
+
+    // Keep debug APKs upgrade-compatible across builds from this repository.
+    // The release key should be supplied separately for production publishing.
+    signingConfigs {
+        create("debugUpgrade") {
+            storeFile = file("${rootProject.projectDir}/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+    buildTypes {
+        getByName("debug") { signingConfig = signingConfigs.getByName("debugUpgrade") }
     }
 
     compileOptions {
