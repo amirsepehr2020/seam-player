@@ -51,6 +51,9 @@ jobs:
           h = h.replace('import androidx.compose.foundation.layout.Row\n', 'import androidx.compose.foundation.layout.Row\nimport androidx.compose.foundation.layout.RowScope\n')
           h = h.replace('private fun QuickCard(', 'private fun RowScope.QuickCard(')
           h = h.replace('fun items=tracks.map', 'val items=tracks.map')
+          # The generated Home file had one superfluous closing brace at the end of SeamHome.
+          # Remove only that exact boundary; do not globally rebalance braces.
+          h = h.replace('}}}}\n}\n\n@Composable private fun HomeScreen', '}}}\n}\n\n@Composable private fun HomeScreen', 1)
           home.write_text(h)
           PY
       - name: Build debug APK
