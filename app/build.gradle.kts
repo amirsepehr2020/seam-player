@@ -12,8 +12,8 @@ android {
         applicationId = "ir.seam.player"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.1.0"
+        versionCode = 6
+        versionName = "2.0.0"
     }
 
     compileOptions {
@@ -45,6 +45,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.3")
     implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-text-google-fonts")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
