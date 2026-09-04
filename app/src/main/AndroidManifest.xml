@@ -12,7 +12,6 @@
         android:roundIcon="@drawable/seam_logo"
         android:theme="@style/Theme.SEAMPlayer"
         android:supportsRtl="true">
-        <activity android:name=".SeamHomeV2Activity" android:exported="false" android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout" />
         <activity android:name=".SEAMHomeActivity" android:exported="true" android:screenOrientation="unspecified" android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
